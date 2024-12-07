@@ -1,0 +1,18 @@
+<table>
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th> Estado </th>
+            <th>Tipo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for registro in historial %}
+        <tr>
+            <td>{{ registro.fecha }}</td>
+            <td>{{ registro.duracion }}</td>
+            <td>{{ registro.tipo }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

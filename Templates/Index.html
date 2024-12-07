@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Index</title>
+    <script>
+        // Recargar la página automáticamente cada 3 segundos
+        setInterval(() => {
+            location.reload();
+        }, 3000); // 3000 ms = 3 segundos
+    </script>
+</head>
+<body>
+<div class="container">
+    <h1>Bienvenido, {{ username }}</h1>
+
+    <h2>Parámetros del ESP32</h2>
+    <ul>
+        <li>Humedad del Suelo: {{ parametros.humedad }}%</li>
+        <li>Nivel de Luz: {{ parametros.luz }}%</li>
+        <li>Temperatura Ambiente: {{ parametros.temperatura }} °C</li>
+        <li>Estado de la Bomba: {{ 'Encendida' if parametros.estado_bomba == 1 else 'Apagada' }}</li>
+    </ul>
+
+    <a href="{{ url_for('control_riego') }}">Ir al Control de Riego</a>
+    <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
+
+    </div>
+</body>
+</html>

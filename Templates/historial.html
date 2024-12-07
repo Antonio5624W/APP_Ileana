@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Actividades</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Historial de Actividades</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Duración</th>
+                    <th>Tipo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in historial %}
+                <tr>
+                    <td>{{ registro['fecha'] }}</td>
+                    <td>{{ registro['duracion'] }}</td>
+                    <td>{{ registro['tipo'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+       
+            <div>
+                <a href="/" class="btn">Volver al Inicio</a>
+                <a href="/descargar_pdf" class="btn">Descargar PDF</a>
+            </div>
+    </div>
+</body>
+</html>

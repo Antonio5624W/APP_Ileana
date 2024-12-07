@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Riego</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Control de Riego</h1>
+        <h2>Estado de la Bomba</h2>
+        <p>Estado actual: <span id="estado-bomba">Desconocido</span></p>
+        <button id="encender-bomba">Encender Bomba</button>
+        <button id="apagar-bomba">Apagar Bomba</button>
+
+        <div>
+            <a href="/historial" class="btn">Ver Historial</a>
+            <a href="/" class="btn">Volver al Inicio</a>
+        </div>
+    </div>
+
+    <script>
+        // Controlar la bomba (Encender/Apagar)
+        async function controlarBomba(estado) {
+            try {
+                const response = await fetch('/control_bomba', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estado })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('estado-bomba').textContent = estado ? 'Encendida' : 'Apagada';
+                }
+            } catch (error) {
+                console.error('Error al controlar la bomba:', error);
+            }
+        }
+
+        document.getElementById('encender-bomba').addEventListener('click', () => controlarBomba(1));
+        document.getElementById('apagar-bomba').addEventListener('click', () => controlarBomba(0));
+    </script>
+</body>
+</html>
