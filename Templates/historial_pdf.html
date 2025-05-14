@@ -7,23 +7,79 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #00c6ff, #0072ff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-        h1 {
+
+        .container {
+            background-color: #1e293b;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 800px;
             text-align: center;
         }
+
+        h1 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        /* Contenedor con scroll */
+        .table-container {
+            max-height: 400px; /* Altura máxima del área visible */
+            overflow-y: auto; /* Habilitar scroll vertical */
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
+
+        table th, table td {
+            border: 1px solid #444;
+            padding: 10px;
             text-align: center;
+            color: #ffffff;
         }
-        th {
-            background-color: #f2f2f2;
+
+        table th {
+            background-color: #0078ff;
+            font-weight: bold;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #2d3748;
+        }
+
+        table tr:nth-child(odd) {
+            background-color: #1e293b;
+        }
+
+        .btn {
+            background-color: #0078ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #005fcc;
         }
     </style>
 </head>
@@ -40,9 +96,9 @@
         <tbody>
             {% for registro in historial %}
             <tr>
-                <td>{{ registro['fecha'] }}</td>
-                <td>{{ registro['duracion'] }}</td>
-                <td>{{ registro['tipo'] }}</td>
+                <td>{{ registro[0] }}</td>
+                <td>{{ registro[1] }}</td>
+                <td>{{ registro[2] }}</td>
             </tr>
             {% endfor %}
         </tbody>

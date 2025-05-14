@@ -9,10 +9,11 @@
 <body>
     <div class="container">
         <h1>Control de Riego</h1>
+        <img src="{{ url_for('static', filename='img/Inverdrop_Original_Logo_300KB.png') }}" alt="Logo Inverdrop" style="width: 120px;">
         <h2>Estado de la Bomba</h2>
         <p>Estado actual: <span id="estado-bomba">Desconocido</span></p>
-        <button id="encender-bomba">Encender Bomba</button>
-        <button id="apagar-bomba">Apagar Bomba</button>
+        <button id="encender-bomba" class="btnEncender">Encender Bomba</button>
+        <button id="apagar-bomba" class="btnCerrar">Apagar Bomba</button>
 
         <div>
             <a href="/historial" class="btn">Ver Historial</a>

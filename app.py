@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response, send_file
 import sqlite3
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+#Variable global para guardar el inicio del riego
+inicio_riego = None
 modo_automatico = False  # False: modo manual, True: modo automático
 import pdfkit
 pdfkit_config = pdfkit.configuration(wkhtmltopdf="C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe")
@@ -41,20 +43,21 @@ def init_db():
     conn = get_db_connection()
     conn.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
-        )
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
+)
     ''')
     conn.execute('''
         CREATE TABLE IF NOT EXISTS historial (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            jardin_id INTEGER NOT NULL,
-            fecha DATETIME NOT NULL,
-            duracion INTEGER NOT NULL,
-            tipo TEXT DEFAULT 'automatica',
-            FOREIGN KEY (jardin_id) REFERENCES jardines(id)
-        )
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL,
+    fecha DATETIME NOT NULL,
+    duracion REAL DEFAULT 0, -- Tiempo en segundos que la bomba estuvo activa
+    tipo TEXT DEFAULT 'manual', -- manual, automatica o emergencia
+    inicio DATETIME DEFAULT NULL, -- Registro de inicio del riego
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+)
     ''')
     conn.commit()
     conn.close()
@@ -132,17 +135,27 @@ def historial():
     ''', (usuario_id,)).fetchall()
     conn.close()
 
-    return render_template('historial.html', historial=historial)
+    # Convertir duraciones manuales (1.0 y 0.0) a "Encendida" y "Apagada"
+    historial_transformado = []
+    for registro in historial:
+        fecha, duracion, tipo = registro
+        if tipo == 'manual':  # Solo para registros manuales
+            duracion = "Encendida" if duracion == 1.0 else "Apagada"
+        historial_transformado.append((fecha, duracion, tipo))
+
+    return render_template('historial.html', historial=historial_transformado)
 
 # Variable global para almacenar los datos recibidos del ESP32
 
 @app.route('/actualizar_parametros', methods=['POST'])
 def actualizar_parametros():
-    global parametros, estado_bomba
+    global parametros, estado_bomba, inicio_riego
 
+    # Recibir datos del ESP32
     data = request.get_json()
+    print(f"Datos recibidos: {data}")  # Log para depuración
 
-    # Actualizar los parámetros globales
+    # Actualizar parámetros globales
     parametros['humedad'] = data.get('humedad', "No disponible")
     parametros['luz'] = data.get('luz', "No disponible")
     parametros['estado_bomba'] = data.get('estado_bomba', "No disponible")
@@ -150,23 +163,63 @@ def actualizar_parametros():
     modo_automatico = data.get('modo_automatico', False)
     riego_emergencia = data.get('riego_emergencia', False)
 
-    # Registrar en el historial si el riego es automático o de emergencia
+    # Conexión a la base de datos
     conn = get_db_connection()
+
     try:
-        if modo_automatico or riego_emergencia:
+        # Determinar el usuario para registrar
+        if 'username' in session:  # Usuario autenticado
+            username = session['username']
+            print(f"Usuario autenticado: {username}")
+            usuario = conn.execute('SELECT id FROM usuarios WHERE username = ?', (username,)).fetchone()
+            if usuario:
+                usuarios = [usuario['id']]  # Solo este usuario
+            else:
+                print("Usuario no encontrado en la base de datos.")
+                return jsonify({"error": "Usuario no encontrado"}), 404
+        else:  # No hay usuario autenticado, usar los primeros 10 usuarios
+            print("No hay usuario autenticado. Registrando riego para los primeros 100 usuarios.")
+            usuarios = [u['id'] for u in conn.execute('SELECT id FROM usuarios ORDER BY id ASC LIMIT 100').fetchall()]
+
+        # Verificar si el riego comienza
+        if (modo_automatico or riego_emergencia) and inicio_riego is None:
+            inicio_riego = datetime.now()
             tipo_riego = 'emergencia' if riego_emergencia else 'automatica'
-            conn.execute('''
-                INSERT INTO historial (usuario_id, fecha, duracion, tipo)
-                VALUES (?, ?, ?, ?)
-            ''', (1, datetime.now(), 0 if parametros['estado_bomba'] == 0 else 1, tipo_riego))
+            print(f"Inicio de riego registrado: {inicio_riego}, Tipo: {tipo_riego}")
+
+            # Registrar el riego para los usuarios seleccionados
+            for usuario_id in usuarios:
+                conn.execute('''
+                    INSERT INTO historial (usuario_id, fecha, inicio, tipo)
+                    VALUES (?, ?, ?, ?)
+                ''', (usuario_id, datetime.now(), inicio_riego, tipo_riego))
             conn.commit()
+
+        # Verificar si el riego termina
+        elif not modo_automatico and not riego_emergencia and inicio_riego is not None:
+            duracion = (datetime.now() - inicio_riego).total_seconds()
+            print(f"Riego terminado. Duración: {duracion} segundos")
+
+            # Actualizar la duración del riego para los usuarios seleccionados
+            for usuario_id in usuarios:
+                conn.execute('''
+                    UPDATE historial
+                    SET duracion = ?
+                    WHERE inicio = ? AND usuario_id = ?
+                ''', (duracion, inicio_riego, usuario_id))
+            conn.commit()
+
+            inicio_riego = None  # Resetear el inicio del riego
+
     except sqlite3.Error as e:
         print(f"Error al registrar riego automático/emergencia: {e}")
+        return jsonify({"error": "Error en la base de datos"}), 500
     finally:
         conn.close()
 
-    print(f"Datos actualizados: {parametros}")
+    print(f"Parámetros actualizados: {parametros}")
     return jsonify({"status": "Datos recibidos correctamente"}), 200
+
 
 # Ruta para control_riego.html
 @app.route('/control_riego', methods=['GET'])
@@ -333,11 +386,15 @@ def logout():
     return redirect(url_for('login'))
 
 # Registro
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['GET', 'POST']) 
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        
+        if not username or not password:
+            return render_template('register.html', error="Debes completar todos los campos.")
+        
         conn = get_db_connection()
         try:
             conn.execute('INSERT INTO usuarios (username, password) VALUES (?, ?)', (username, password))
@@ -345,19 +402,10 @@ def register():
             conn.close()
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
-            return "El usuario ya está registrado. <a href='/register'>Intentar de nuevo</a>"
+            conn.close()
+            return render_template('register.html', error="El usuario ya está registrado. Por favor, elige otro nombre.")
+    
     return render_template('register.html')
-
-
-
-# Historial de riego (versión JSON)
-#@app.route('/historial/<int:jardin_id>', methods=['GET'])
-#def historial(jardin_id):
- #   conn = get_db_connection()
-  #  historial = conn.execute('SELECT fecha, duracion, tipo FROM historial WHERE jardin_id = ?', (jardin_id,)).fetchall()
-   # conn.close()
-
-    #return render_template('historial.html', historial=historial, jardin_id=jardin_id)
 
 
 if __name__ == '__main__':

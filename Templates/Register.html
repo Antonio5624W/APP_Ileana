@@ -3,21 +3,36 @@
 <head>
   <title>Registro</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script>
+    // Función para mostrar una alerta si hay un error
+    function mostrarAlerta(mensaje) {
+        if (mensaje) {
+            alert(mensaje);
+        }
+    }
+</script>
 </head>
 <body>
   <div class="container">
+    <img src="{{ url_for('static', filename='img/Inverdrop_Original_Logo_300KB.png') }}" alt="Logo Inverdrop" style="width: 120px;">
   <h1>Registro de Usuario</h1>
   <form method="post">
     <label>Usuario:</label><br>
     <input type="text" name="username" required><br><br>
     <label>Contraseña:</label><br>
     <input type="password" name="password" required><br><br>
-    <button type="submit">Registrarse</button>
+    <button type="submit" class="btn">Registrarse</button>
+    <br>
     <br>
     <a href="/login">Ya tienes una cuenta? Inicia sesión</a>
   </form>
   </div>
-  
+   <!-- Mostrar alerta si hay un error -->
+   {% if error %}
+   <script>
+       mostrarAlerta("{{ error }}");
+   </script>
+   {% endif %}
  
 </body>
 </html>

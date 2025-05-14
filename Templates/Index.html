@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/style.css">
-    <title>Index</title>
+    <title>INVERDROP</title>
     <script>
         // Recargar la página automáticamente cada 3 segundos
         setInterval(() => {
@@ -14,19 +14,34 @@
 </head>
 <body>
 <div class="container">
+    <img src="{{ url_for('static', filename='img/Inverdrop_Original_Logo_300KB.png') }}" alt="Logo Inverdrop" style="width: 120px;">
+
     <h1>Bienvenido, {{ username }}</h1>
 
-    <h2>Parámetros del ESP32</h2>
-    <ul>
-        <li>Humedad del Suelo: {{ parametros.humedad }}%</li>
-        <li>Nivel de Luz: {{ parametros.luz }}%</li>
-        <li>Temperatura Ambiente: {{ parametros.temperatura }} °C</li>
-        <li>Estado de la Bomba: {{ 'Encendida' if parametros.estado_bomba == 1 else 'Apagada' }}</li>
-    </ul>
-
-    <a href="{{ url_for('control_riego') }}">Ir al Control de Riego</a>
-    <a href="{{ url_for('logout') }}">Cerrar Sesión</a>
-
+    <h2>Parámetros del invernadero</h2>
+    <div class="parametros">
+        <div class="parametro">
+            <span>🌱</span>
+            <p><strong>Humedad del Suelo:</strong> {{ parametros.humedad }}%</p>
+        </div>
+        <div class="parametro">
+            <span>☀️</span>
+            <p><strong>Nivel de Luz:</strong> {{ parametros.luz }}%</p>
+        </div>
+        <div class="parametro">
+            <span>🌡️</span>
+            <p><strong>Temperatura Ambiente:</strong> {{ parametros.temperatura }} °C</p>
+        </div>
+        <div class="parametro">
+            <span>💧</span>
+            <p><strong>Estado de la Bomba:</strong> {{ 'Encendida' if parametros.estado_bomba == 1 else 'Apagada' }}</p>
+        </div>
     </div>
+
+    <div class="links">
+        <a href="{{ url_for('control_riego') }}" class="btn">Ir al Control de Riego</a>
+        <a href="{{ url_for('logout') }}" class="btnCerrar">Cerrar Sesión</a>
+    </div>
+</div>
 </body>
 </html>
